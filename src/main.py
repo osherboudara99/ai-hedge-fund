@@ -147,6 +147,15 @@ if __name__ == "__main__":
     parser.add_argument("--show-agent-graph", action="store_true", help="Show the agent graph")
     parser.add_argument("--ollama", action="store_true", help="Use Ollama for local LLM inference")
 
+    # Added by ONB 4/30/2025
+    # Takes in agents as argument
+    parser.add_argument("--agent", choices=[i for display, i in ANALYST_ORDER] + ["all"], nargs='+', help="Select one or more agents, or 'all' to select all")
+
+
+    # Added by ONB 4/30/2025
+    # Takes in Ollama model as argument
+    parser.add_argument("--ollama-model", choices= [i for display, i, _ in OLLAMA_LLM_ORDER], help="Select one OLLAMA model")
+    
     args = parser.parse_args()
 
     # Parse tickers from comma-separated string
@@ -154,21 +163,32 @@ if __name__ == "__main__":
 
     # Select analysts
     selected_analysts = None
-    choices = questionary.checkbox(
-        "Select your AI analysts.",
-        choices=[questionary.Choice(display, value=value) for display, value in ANALYST_ORDER],
-        instruction="\n\nInstructions: \n1. Press Space to select/unselect analysts.\n2. Press 'a' to select/unselect all.\n3. Press Enter when done to run the hedge fund.\n",
-        validate=lambda x: len(x) > 0 or "You must select at least one analyst.",
-        style=questionary.Style(
-            [
-                ("checkbox-selected", "fg:green"),
-                ("selected", "fg:green noinherit"),
-                ("highlighted", "noinherit"),
-                ("pointer", "noinherit"),
-            ]
-        ),
-    ).ask()
+    
+    # Commented by ONB 4/30/2025
+    # choices = questionary.checkbox(
+    #     "Select your AI analysts.",
+    #     choices=[questionary.Choice(display, value=value) for display, value in ANALYST_ORDER],
+    #     instruction="\n\nInstructions: \n1. Press Space to select/unselect analysts.\n2. Press 'a' to select/unselect all.\n3. Press Enter when done to run the hedge fund.\n",
+    #     validate=lambda x: len(x) > 0 or "You must select at least one analyst.",
+    #     style=questionary.Style(
+    #         [
+    #             ("checkbox-selected", "fg:green"),
+    #             ("selected", "fg:green noinherit"),
+    #             ("highlighted", "noinherit"),
+    #             ("pointer", "noinherit"),
+    #         ]
+    #     ),
+    # ).ask()
+    
+    # Added by ONB 4/30/2025
+    # Check whether all was selected
+    if "all" in args.agent:
+        selected_agents = [i for display, i in ANALYST_ORDER]
+    else:
+        selected_agents = args.agent
+    choices = selected_agents
 
+    
     if not choices:
         print("\n\nInterrupt received. Exiting...")
         sys.exit(0)
@@ -183,19 +203,22 @@ if __name__ == "__main__":
     if args.ollama:
         print(f"{Fore.CYAN}Using Ollama for local LLM inference.{Style.RESET_ALL}")
 
+        # Commented by ONB 4/30/2025
         # Select from Ollama-specific models
-        model_choice = questionary.select(
-            "Select your Ollama model:",
-            choices=[questionary.Choice(display, value=value) for display, value, _ in OLLAMA_LLM_ORDER],
-            style=questionary.Style(
-                [
-                    ("selected", "fg:green bold"),
-                    ("pointer", "fg:green bold"),
-                    ("highlighted", "fg:green"),
-                    ("answer", "fg:green bold"),
-                ]
-            ),
-        ).ask()
+        # model_choice = questionary.select(
+        #     "Select your Ollama model:",
+        #     choices=[questionary.Choice(display, value=value) for display, value, _ in OLLAMA_LLM_ORDER],
+        #     style=questionary.Style(
+        #         [
+        #             ("selected", "fg:green bold"),
+        #             ("pointer", "fg:green bold"),
+        #             ("highlighted", "fg:green"),
+        #             ("answer", "fg:green bold"),
+        #         ]
+        #     ),
+        # ).ask()
+
+        model_choice = args.ollama_model
 
         if not model_choice:
             print("\n\nInterrupt received. Exiting...")
