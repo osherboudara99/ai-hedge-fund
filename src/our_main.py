@@ -5,19 +5,19 @@ from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph
 from colorama import Fore, Style, init
 import questionary
-from src.agents.portfolio_manager import portfolio_management_agent
-from src.agents.risk_manager import risk_management_agent
-from src.graph.state import AgentState
-from src.utils.display import print_trading_output
-from src.utils.analysts import ANALYST_ORDER, get_analyst_nodes
-from src.utils.progress import progress
-from src.llm.models import LLM_ORDER, OLLAMA_LLM_ORDER, get_model_info, ModelProvider
-from src.utils.ollama import ensure_ollama_and_model
+from agents.portfolio_manager import portfolio_management_agent
+from agents.risk_manager import risk_management_agent
+from graph.state import AgentState
+from utils.display import print_trading_output
+from utils.analysts import ANALYST_ORDER, get_analyst_nodes
+from utils.progress import progress
+from llm.models import LLM_ORDER, OLLAMA_LLM_ORDER, get_model_info, ModelProvider
+from utils.ollama import ensure_ollama_and_model
 
 import argparse
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from src.utils.visualize import save_graph_as_png
+from utils.visualize import save_graph_as_png
 import json
 
 # Load environment variables from .env file
@@ -118,15 +118,15 @@ def create_workflow(selected_analysts=None):
 
     # Always add risk and portfolio management
     workflow.add_node("risk_management_agent", risk_management_agent)
-    workflow.add_node("portfolio_manager", portfolio_management_agent)
+    workflow.add_node("portfolio_management_agent", portfolio_management_agent)
 
     # Connect selected analysts to risk management
     for analyst_key in selected_analysts:
         node_name = analyst_nodes[analyst_key][0]
         workflow.add_edge(node_name, "risk_management_agent")
 
-    workflow.add_edge("risk_management_agent", "portfolio_manager")
-    workflow.add_edge("portfolio_manager", END)
+    workflow.add_edge("risk_management_agent", "portfolio_management_agent")
+    workflow.add_edge("portfolio_management_agent", END)
 
     workflow.set_entry_point("start_node")
     return workflow
@@ -147,6 +147,15 @@ if __name__ == "__main__":
     parser.add_argument("--show-agent-graph", action="store_true", help="Show the agent graph")
     parser.add_argument("--ollama", action="store_true", help="Use Ollama for local LLM inference")
 
+    # Added by ONB 4/30/2025
+    # Takes in agents as argument
+    parser.add_argument("--agent", choices=[i for display, i in ANALYST_ORDER] + ["all"], nargs='+', help="Select one or more agents, or 'all' to select all")
+
+
+    # Added by ONB 4/30/2025
+    # Takes in Ollama model as argument
+    parser.add_argument("--ollama-model", choices= [i for display, i, _ in OLLAMA_LLM_ORDER], help="Select one OLLAMA model")
+    
     args = parser.parse_args()
 
     # Parse tickers from comma-separated string
@@ -154,21 +163,32 @@ if __name__ == "__main__":
 
     # Select analysts
     selected_analysts = None
-    choices = questionary.checkbox(
-        "Select your AI analysts.",
-        choices=[questionary.Choice(display, value=value) for display, value in ANALYST_ORDER],
-        instruction="\n\nInstructions: \n1. Press Space to select/unselect analysts.\n2. Press 'a' to select/unselect all.\n3. Press Enter when done to run the hedge fund.\n",
-        validate=lambda x: len(x) > 0 or "You must select at least one analyst.",
-        style=questionary.Style(
-            [
-                ("checkbox-selected", "fg:green"),
-                ("selected", "fg:green noinherit"),
-                ("highlighted", "noinherit"),
-                ("pointer", "noinherit"),
-            ]
-        ),
-    ).ask()
+    
+    # Commented by ONB 4/30/2025
+    # choices = questionary.checkbox(
+    #     "Select your AI analysts.",
+    #     choices=[questionary.Choice(display, value=value) for display, value in ANALYST_ORDER],
+    #     instruction="\n\nInstructions: \n1. Press Space to select/unselect analysts.\n2. Press 'a' to select/unselect all.\n3. Press Enter when done to run the hedge fund.\n",
+    #     validate=lambda x: len(x) > 0 or "You must select at least one analyst.",
+    #     style=questionary.Style(
+    #         [
+    #             ("checkbox-selected", "fg:green"),
+    #             ("selected", "fg:green noinherit"),
+    #             ("highlighted", "noinherit"),
+    #             ("pointer", "noinherit"),
+    #         ]
+    #     ),
+    # ).ask()
+    
+    # Added by ONB 4/30/2025
+    # Check whether all was selected
+    if "all" in args.agent:
+        selected_agents = [i for display, i in ANALYST_ORDER]
+    else:
+        selected_agents = args.agent
+    choices = selected_agents
 
+    
     if not choices:
         print("\n\nInterrupt received. Exiting...")
         sys.exit(0)
@@ -183,19 +203,22 @@ if __name__ == "__main__":
     if args.ollama:
         print(f"{Fore.CYAN}Using Ollama for local LLM inference.{Style.RESET_ALL}")
 
+        # Commented by ONB 4/30/2025
         # Select from Ollama-specific models
-        model_choice = questionary.select(
-            "Select your Ollama model:",
-            choices=[questionary.Choice(display, value=value) for display, value, _ in OLLAMA_LLM_ORDER],
-            style=questionary.Style(
-                [
-                    ("selected", "fg:green bold"),
-                    ("pointer", "fg:green bold"),
-                    ("highlighted", "fg:green"),
-                    ("answer", "fg:green bold"),
-                ]
-            ),
-        ).ask()
+        # model_choice = questionary.select(
+        #     "Select your Ollama model:",
+        #     choices=[questionary.Choice(display, value=value) for display, value, _ in OLLAMA_LLM_ORDER],
+        #     style=questionary.Style(
+        #         [
+        #             ("selected", "fg:green bold"),
+        #             ("pointer", "fg:green bold"),
+        #             ("highlighted", "fg:green"),
+        #             ("answer", "fg:green bold"),
+        #         ]
+        #     ),
+        # ).ask()
+
+        model_choice = args.ollama_model
 
         if not model_choice:
             print("\n\nInterrupt received. Exiting...")
