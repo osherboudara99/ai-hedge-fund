@@ -7,8 +7,8 @@ import { useResizable } from '@/hooks/use-resizable';
 import { cn } from '@/lib/utils';
 import { PanelLeft } from 'lucide-react';
 import { ReactNode } from 'react';
-import { ComponentGroupItem } from './component-group';
 import { SearchBox } from './search-box';
+import { SidebarItemGroup } from './sidebar-item-group';
 
 interface LeftSidebarProps {
   children?: ReactNode;
@@ -30,7 +30,6 @@ export function LeftSidebar({
     activeItem, 
     openGroups, 
     filteredGroups,
-    handleItemClick, 
     handleAccordionChange 
   } = useComponentGroups(componentGroups);
   const { addNodeFromComponent } = useFlowContext();
@@ -80,11 +79,10 @@ export function LeftSidebar({
           onValueChange={handleAccordionChange}
         >
           {filteredGroups.map(group => (
-            <ComponentGroupItem
+            <SidebarItemGroup
               key={group.name} 
               group={group}
               activeItem={activeItem}
-              onItemClick={handleItemClick}
               onComponentAdd={handleComponentAdd}
             />
           ))}

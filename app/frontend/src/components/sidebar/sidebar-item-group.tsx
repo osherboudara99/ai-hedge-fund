@@ -2,19 +2,17 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/
 import { ComponentGroup, ComponentItem } from '@/data/sidebar-components';
 import { SidebarItem } from './sidebar-item';
 
-interface ComponentGroupProps {
+interface SidebarItemGroupProps {
   group: ComponentGroup;
   activeItem: string | null;
-  onItemClick: (itemName: string) => void;
   onComponentAdd?: (componentName: string) => void;
 }
 
-export function ComponentGroupItem({ 
+export function SidebarItemGroup({ 
   group, 
   activeItem, 
-  onItemClick,
   onComponentAdd
-}: ComponentGroupProps) {
+}: SidebarItemGroupProps) {
   const { name, icon: Icon, iconColor, items } = group;
   
   return (
@@ -33,7 +31,7 @@ export function ComponentGroupItem({
               icon={item.icon} 
               label={item.name} 
               isActive={activeItem === item.name}
-              onClick={() => onItemClick(item.name)}
+              onClick={onComponentAdd ? () => onComponentAdd(item.name) : undefined}
               onAddClick={onComponentAdd ? () => onComponentAdd(item.name) : undefined}
             />
           ))}
